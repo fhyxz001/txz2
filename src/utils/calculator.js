@@ -162,6 +162,7 @@ export function generatePlan(people, tier, names, friendMatrix) {
 
   const price = PRICE[tier]
   const resultCards = buildResultCards(chain, price, friendMap)
+  const collectBill = buildCollectBill(chain, resultCards)
 
   const friendWarnings = []
   for (let i = 0; i < chain.length - 1; i++) {
@@ -183,11 +184,26 @@ export function generatePlan(people, tier, names, friendMatrix) {
     chain: chain.map((c) => c.person),
     chainWithElf: chain,
     resultCards,
+    collectBill,
     friendWarnings,
     tier,
     totalGamePayment,
     savings,
   }
+}
+
+// 群收款账单：由车头（源头）统一发起，其余成员各转给车头一笔净差额
+function buildCollectBill(chain, cards) {
+  const head = chain[0].person
+  const perPerson = cards[0].perPerson
+  const items = []
+  for (let i = 1; i < chain.length; i++) {
+    const out = cards[i].transfers.find((t) => t.direction === 'out')
+    if (!out) continue
+    items.push({ person: chain[i].person, amount: out.amount })
+  }
+  const total = Math.round(items.reduce((s, it) => s + it.amount, 0) * 100) / 100
+  return { head, perPerson, total, items }
 }
 
 function buildResultCards(chain, price, friendMap) {
@@ -198,7 +214,6 @@ function buildResultCards(chain, price, friendMap) {
 
   const totalGamePayment = P + (n - 1) * S
   const perPerson = Math.round((totalGamePayment / n) * 100) / 100
-  const diff = Math.round(((P - S) / n) * 100) / 100
 
   for (let i = 0; i < n; i++) {
     const { person, assignedElf } = chain[i]
@@ -251,56 +266,27 @@ function buildResultCards(chain, price, friendMap) {
     else if (isLast) gamePayment = 0
     else gamePayment = S
 
+    // 简化结算：源头 A 现场代付最多，其余人只需把「应摊金额 - 各自现场代付」的净差额直接转给源头
     const transfers = []
 
     if (isFirst) {
-      if (n > 1) {
-        transfers.push({
-          direction: 'in',
-          from: chain[1].person.name,
-          amount: Math.round((S + diff) * 100) / 100,
-          reason: `副券价 ${S} 元 + 平摊差额 ${diff} 元`,
-        })
-      }
-      for (let j = 2; j < n; j++) {
+      for (let j = 1; j < n; j++) {
+        const draftPaid = j === n - 1 ? 0 : S
+        const amt = Math.round((perPerson - draftPaid) * 100) / 100
         transfers.push({
           direction: 'in',
           from: chain[j].person.name,
-          amount: diff,
-          reason: `平摊差额 ${diff} 元`,
+          amount: amt,
+          reason: `应摊 ${perPerson} 元 - 现场代付 ${draftPaid} 元`,
         })
       }
     } else {
-      if (i === 1) {
-        transfers.push({
-          direction: 'out',
-          to: chain[0].person.name,
-          amount: Math.round((S + diff) * 100) / 100,
-          reason: `副券价 ${S} 元 + 平摊差额 ${diff} 元`,
-        })
-      } else {
-        transfers.push({
-          direction: 'out',
-          to: chain[i - 1].person.name,
-          amount: S,
-          reason: `副券价`,
-        })
-        transfers.push({
-          direction: 'out',
-          to: chain[0].person.name,
-          amount: diff,
-          reason: `平摊差额`,
-        })
-      }
-
-      if (!isLast) {
-        transfers.push({
-          direction: 'in',
-          from: chain[i + 1].person.name,
-          amount: S,
-          reason: `副券价`,
-        })
-      }
+      transfers.push({
+        direction: 'out',
+        to: chain[0].person.name,
+        amount: Math.round((perPerson - gamePayment) * 100) / 100,
+        reason: `应摊 ${perPerson} 元 - 现场代付 ${gamePayment} 元`,
+      })
     }
 
     const friendHints = []

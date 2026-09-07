@@ -390,6 +390,48 @@
                   </div>
                 </section>
 
+                <!-- 群收款 -->
+                <section key="collect" class="wx-collect">
+                  <div class="wx-collect-head">
+                    <div class="wx-collect-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v20M17 7l-5-5-5 5"/>
+                      </svg>
+                    </div>
+                    <div class="wx-collect-title">
+                      <div class="wx-collect-name">群收款</div>
+                      <div class="wx-collect-sub">由「{{ planResult.collectBill.head.name }}」发起</div>
+                    </div>
+                  </div>
+
+                  <div class="wx-collect-amount">
+                    <span class="wx-collect-currency">¥</span>
+                    <span class="wx-collect-total">{{ planResult.collectBill.total.toFixed(2) }}</span>
+                  </div>
+
+                  <ul class="wx-collect-list">
+                    <li
+                      v-for="it in planResult.collectBill.items"
+                      :key="'cb-' + it.person.id"
+                      class="wx-collect-item"
+                    >
+                      <div
+                        class="wx-collect-avatar"
+                        :class="{ 'has-image': it.person.avatar }"
+                        :style="it.person.avatar ? { backgroundImage: `url(${it.person.avatar})` } : null"
+                      >
+                        <span v-if="!it.person.avatar">{{ (it.person.name || '?').charAt(0) }}</span>
+                      </div>
+                      <span class="wx-collect-member-name">{{ it.person.name }}</span>
+                      <span class="wx-collect-item-amount">¥ {{ it.amount.toFixed(2) }}</span>
+                    </li>
+                  </ul>
+
+                  <div class="wx-collect-footer">
+                    转给车头，收款人：{{ planResult.collectBill.head.name }}
+                  </div>
+                </section>
+
                 <!-- 传火链条 -->
                 <section key="chain" class="card chain-section">
                   <h2 class="section-title">
@@ -482,20 +524,6 @@
                       </span>
                       <span class="line-label">{{ item.label }}</span>
                     </li>
-                    <li
-                      v-for="(t, idx) in card.transfers"
-                      :key="'t' + idx"
-                      class="line-item"
-                      :class="t.direction"
-                    >
-                      <span class="line-amount" :class="t.direction">
-                        {{ t.direction === 'out' ? '-' : '+' }}{{ t.amount }}
-                      </span>
-                      <span class="line-label">
-                        {{ t.direction === 'out' ? `转给 ${t.to}` : `${t.from} 转给你` }}
-                        <span v-if="t.reason" class="line-note">· {{ t.reason }}</span>
-                      </span>
-                    </li>
                   </ul>
 
                   <div class="net-summary">
@@ -527,7 +555,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { generatePlan, PRICE } from './utils/calculator.js'
 import html2canvas from 'html2canvas'
 
@@ -620,6 +648,28 @@ function clearAllFriends() {
 function addPerson() {
   people.push({ id: nextId++, name: '', userId: '', avatar: '', needElf: 'elf1', isHead: false, isTail: false })
 }
+
+// ===== 自动录入 users 目录角色 =====
+// 图片命名规则: 名称-UID.jpg，例如 星窈窈-671379437.jpg
+const userAvatars = import.meta.glob('../users/*.jpg', { eager: true, query: '?url', import: 'default' })
+
+function loadUsersFromDir() {
+  const loaded = []
+  for (const [path, url] of Object.entries(userAvatars)) {
+    const base = path.split('/').pop() || ''
+    const dot = base.lastIndexOf('.')
+    const dash = base.lastIndexOf('-')
+    if (dash <= 0 || dot <= dash) continue
+    const name = base.slice(0, dash).trim()
+    const userId = base.slice(dash + 1, dot).trim()
+    if (!name) continue
+    loaded.push({ id: nextId++, name, userId, avatar: url, needElf: 'any', isHead: false, isTail: false })
+  }
+  loaded.sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+  loaded.forEach((p) => people.push(p))
+}
+
+onMounted(loadUsersFromDir)
 
 function removePerson(index) {
   const removed = people.splice(index, 1)[0]
@@ -2034,6 +2084,136 @@ body {
   background: var(--blue-bg);
   color: var(--blue);
   font-size: 12px;
+  font-weight: 600;
+}
+
+/* ===== 群收款（微信样式） ===== */
+.wx-collect {
+  margin-bottom: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.wx-collect-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 6px;
+}
+
+.wx-collect-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wx-collect-title {
+  min-width: 0;
+}
+
+.wx-collect-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.wx-collect-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.wx-collect-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 8px 20px 14px;
+}
+
+.wx-collect-currency {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.wx-collect-total {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.wx-collect-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wx-collect-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  border-top: 1px solid var(--separator);
+}
+
+.wx-collect-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #5AC8FA, #007AFF);
+  background-size: cover;
+  background-position: center;
+}
+
+.wx-collect-avatar.has-image {
+  color: transparent;
+}
+
+.wx-collect-member-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wx-collect-item-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.wx-collect-footer {
+  padding: 12px 20px;
+  font-size: 12px;
+  color: var(--green);
+  background: var(--green-bg);
+  border-top: 1px solid var(--border);
   font-weight: 600;
 }
 
