@@ -80,11 +80,11 @@
             </div>
             <div class="elf-name-row">
               <div class="elf-name-field">
-                <label class="field-label">新月鹭</label>
+                <label class="field-label">精灵1</label>
                 <input v-model="elfName1" placeholder="新月鹭" class="input" />
               </div>
               <div class="elf-name-field">
-                <label class="field-label">热团团</label>
+                <label class="field-label">精灵2</label>
                 <input v-model="elfName2" placeholder="热团团" class="input" />
               </div>
             </div>
@@ -390,25 +390,37 @@
                   </div>
                 </section>
 
-                <!-- 群收款 -->
+                <!-- 群收款（微信原生账单） -->
                 <section key="collect" class="wx-collect">
-                  <div class="wx-collect-head">
-                    <div class="wx-collect-icon">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v20M17 7l-5-5-5 5"/>
-                      </svg>
+                  <!-- 发起人信息 -->
+                  <div class="wx-collect-initiator">
+                    <div
+                      class="wx-collect-initiator-avatar"
+                      :class="{ 'has-image': planResult.collectBill.head.avatar }"
+                      :style="planResult.collectBill.head.avatar ? { backgroundImage: `url(${planResult.collectBill.head.avatar})` } : null"
+                    >
+                      <span v-if="!planResult.collectBill.head.avatar">{{ (planResult.collectBill.head.name || '?').charAt(0) }}</span>
                     </div>
-                    <div class="wx-collect-title">
-                      <div class="wx-collect-name">群收款</div>
-                      <div class="wx-collect-sub">由「{{ planResult.collectBill.head.name }}」发起</div>
+                    <div class="wx-collect-initiator-text">
+                      <div class="wx-collect-initiator-title">{{ planResult.collectBill.head.name }}发起的群收款</div>
+                      <div class="wx-collect-initiator-sub">共¥{{ planResult.collectBill.total.toFixed(2) }}，需收¥{{ planResult.collectBill.total.toFixed(2) }}</div>
                     </div>
                   </div>
+                  <div class="wx-divider-thin"></div>
 
-                  <div class="wx-collect-amount">
-                    <span class="wx-collect-currency">¥</span>
-                    <span class="wx-collect-total">{{ planResult.collectBill.total.toFixed(2) }}</span>
+                  <!-- 收款状态 -->
+                  <div class="wx-collect-status">
+                    <span class="wx-collect-tab">拼团收款</span>
+                    <div class="wx-collect-status-main">待收款</div>
+                    <div class="wx-collect-status-sub">共¥{{ planResult.collectBill.total.toFixed(2) }} 元</div>
                   </div>
+                  <div class="wx-divider-band"></div>
 
+                  <!-- 支付统计 -->
+                  <div class="wx-collect-stats">{{ planResult.collectBill.items.length }}人待支付</div>
+                  <div class="wx-divider-thin"></div>
+
+                  <!-- 成员列表 -->
                   <ul class="wx-collect-list">
                     <li
                       v-for="it in planResult.collectBill.items"
@@ -423,13 +435,9 @@
                         <span v-if="!it.person.avatar">{{ (it.person.name || '?').charAt(0) }}</span>
                       </div>
                       <span class="wx-collect-member-name">{{ it.person.name }}</span>
-                      <span class="wx-collect-item-amount">¥ {{ it.amount.toFixed(2) }}</span>
+                      <span class="wx-collect-item-amount">待支付 ¥{{ it.amount.toFixed(2) }}</span>
                     </li>
                   </ul>
-
-                  <div class="wx-collect-footer">
-                    转给车头，收款人：{{ planResult.collectBill.head.name }}
-                  </div>
                 </section>
 
                 <!-- 传火链条 -->
@@ -2087,97 +2095,147 @@ body {
   font-weight: 600;
 }
 
-/* ===== 群收款（微信样式） ===== */
+/* ===== 群收款（微信原生账单） ===== */
 .wx-collect {
   margin-bottom: 16px;
-  border-radius: var(--radius);
-  background: var(--surface-solid);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  background: #fff;
+  border-radius: 6px;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #111;
 }
 
-.wx-collect-head {
+/* 分隔线 */
+.wx-divider-thin {
+  height: 1px;
+  background: #EEEEEE;
+}
+
+/* 10px 深色粗分隔带 */
+.wx-divider-band {
+  height: 10px;
+  background: #F2F2F2;
+  border-top: 1px solid #ECECEC;
+  border-bottom: 1px solid #ECECEC;
+}
+
+/* 第一部分：发起人信息 */
+.wx-collect-initiator {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 20px 6px;
+  gap: 12px;
+  padding: 16px 16px;
 }
 
-.wx-collect-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--green);
-  color: #fff;
+.wx-collect-initiator-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #5AC8FA, #007AFF);
+  background-size: cover;
+  background-position: center;
 }
 
-.wx-collect-title {
+.wx-collect-initiator-avatar.has-image {
+  color: transparent;
+}
+
+.wx-collect-initiator-text {
   min-width: 0;
 }
 
-.wx-collect-name {
-  font-size: 15px;
+.wx-collect-initiator-title {
+  font-size: 17px;
   font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.2px;
+  color: #111;
+  letter-spacing: -0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.wx-collect-sub {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 1px;
-}
-
-.wx-collect-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 8px 20px 14px;
-}
-
-.wx-collect-currency {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--green);
-}
-
-.wx-collect-total {
-  font-size: 40px;
-  font-weight: 800;
-  color: var(--green);
-  letter-spacing: -0.5px;
+.wx-collect-initiator-sub {
+  font-size: 13px;
+  color: #9A9A9A;
+  margin-top: 3px;
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
 }
 
+/* 第二部分：收款状态 */
+.wx-collect-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 44px;
+  gap: 6px;
+}
+
+.wx-collect-tab {
+  font-size: 12px;
+  color: #8A8A8A;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border: 1px solid #DADADA;
+  border-radius: 4px;
+}
+
+.wx-collect-status-main {
+  font-size: 34px;
+  font-weight: 600;
+  color: #9A9A9A;
+  letter-spacing: 2px;
+  margin-top: 18px;
+}
+
+.wx-collect-status-sub {
+  font-size: 13px;
+  color: #9A9A9A;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 第四部分：支付统计 */
+.wx-collect-stats {
+  font-size: 13px;
+  color: #8A8A8A;
+  padding: 12px 16px;
+}
+
+/* 第五部分：成员列表 */
 .wx-collect-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  background: #fff;
 }
 
 .wx-collect-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 20px;
-  border-top: 1px solid var(--separator);
+  gap: 12px;
+  padding: 11px 16px;
+  border-top: 1px solid #EEEEEE;
+}
+
+.wx-collect-item:first-child {
+  border-top: none;
 }
 
 .wx-collect-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, #5AC8FA, #007AFF);
@@ -2193,8 +2251,8 @@ body {
   flex: 1;
   min-width: 0;
   font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 400;
+  color: #111;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2202,19 +2260,9 @@ body {
 
 .wx-collect-item-amount {
   font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
+  color: #111;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
-}
-
-.wx-collect-footer {
-  padding: 12px 20px;
-  font-size: 12px;
-  color: var(--green);
-  background: var(--green-bg);
-  border-top: 1px solid var(--border);
-  font-weight: 600;
 }
 
 /* ===== RESULT CARD ===== */
