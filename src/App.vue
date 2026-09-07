@@ -80,12 +80,12 @@
             </div>
             <div class="elf-name-row">
               <div class="elf-name-field">
-                <label class="field-label">离心舞者</label>
-                <input v-model="elfName1" placeholder="离心舞者" class="input" />
+                <label class="field-label">新月鹭</label>
+                <input v-model="elfName1" placeholder="新月鹭" class="input" />
               </div>
               <div class="elf-name-field">
-                <label class="field-label">胡桃王子</label>
-                <input v-model="elfName2" placeholder="胡桃王子" class="input" />
+                <label class="field-label">热团团</label>
+                <input v-model="elfName2" placeholder="热团团" class="input" />
               </div>
             </div>
           </section>
@@ -189,12 +189,12 @@
                         class="elf-radio-btn"
                         :class="{ active: person.needElf === 'elf1' }"
                         @click="person.needElf = 'elf1'"
-                      >{{ elfName1 || '离心舞者' }}</button>
+                      >{{ elfName1 || '新月鹭' }}</button>
                       <button
                         class="elf-radio-btn"
                         :class="{ active: person.needElf === 'elf2' }"
                         @click="person.needElf = 'elf2'"
-                      >{{ elfName2 || '胡桃王子' }}</button>
+                      >{{ elfName2 || '热团团' }}</button>
                       <button
                         class="elf-radio-btn"
                         :class="{ active: person.needElf === 'any' }"
@@ -533,8 +533,8 @@ import html2canvas from 'html2canvas'
 
 // ===== 状态 =====
 const tier = ref('normal')
-const elfName1 = ref('离心舞者')
-const elfName2 = ref('胡桃王子')
+const elfName1 = ref('新月鹭')
+const elfName2 = ref('热团团')
 
 // 主题: 'system' | 'light' | 'dark'
 const themeMode = ref('system')
@@ -652,8 +652,8 @@ function onTailToggle(person) {
 
 // ===== 精灵名称 =====
 function getElfName(elf) {
-  if (elf === 'elf1') return elfName1.value || '离心舞者'
-  if (elf === 'elf2') return elfName2.value || '胡桃王子'
+  if (elf === 'elf1') return elfName1.value || '新月鹭'
+  if (elf === 'elf2') return elfName2.value || '热团团'
   return '都行'
 }
 
@@ -663,8 +663,8 @@ function resetAll() {
   friendships.clear()
   nextId = 1
   tier.value = 'normal'
-  elfName1.value = '离心舞者'
-  elfName2.value = '胡桃王子'
+  elfName1.value = '新月鹭'
+  elfName2.value = '热团团'
   planResult.value = null
   errorMsg.value = ''
   computing.value = false
@@ -694,7 +694,7 @@ async function doGenerate() {
 
   const result = generatePlan(
     [...people], tier.value,
-    { elf1: elfName1.value || '离心舞者', elf2: elfName2.value || '胡桃王子' },
+    { elf1: elfName1.value || '新月鹭', elf2: elfName2.value || '热团团' },
     buildFriendMatrix()
   )
 
